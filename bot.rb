@@ -1,55 +1,88 @@
-require 'telegram_bot'
+require 'telegram/bot'
 require 'httparty'
 require 'json'
 require 'open-uri'
 require 'yaml'
 
 config = YAML.load_file('config.yml')
-bot = TelegramBot.new(token: config['telegram_key'])
-bot.get_updates(fail_silently: true) do |message|
-  puts "@#{message.from.username}: #{message.text}"
-  url = 'http://it-ebooks-api.info/v1/'
-  command = message.get_command_for(bot)
+base_url = 'http://it-ebooks-api.info/v1/'
 
-  message.reply do |reply|
-    case command
+Telegram::Bot::Client.run(config['telegram_key']) do |bot|
+  bot.listen do |message|
+    case message.text
+    when '/start'
+      bot.api.send_message(chat_id: message.chat.id, text: "Hello, #{message.from.first_name}")
+    when '/help'
+      bot.api.send_message(chat_id: message.chat.id, text: "Available commands: /search")
+    when /^\/[0-9]+$/
+      response = HTTParty.get("#{base_url}book/#{message.text}")
+      if (response.code == 200) 
+       book_detail = JSON.parse(response.body)
+        if (book_detail['Error'] == '0')
+          bot.api.send_message(
+            chat_id: message.chat.id,
+            text: "Here you go: " <<
+              "#{book_detail['Title']} (#{book_detail['Year']}) by " <<
+              "#{book_detail['Author']} " <<
+              "#{book_detail['Download']}"
+          )
+        else
+          bot.api.send_message(
+            chat_id: message.chat.id,
+            text: "The book was not found, please try again later"
+          )
+        end
+      else
+       bot.api.send_message(
+         chat_id: message.chat.id,
+         text: "There was an error trying to communicate with It-Ebooks. " <<
+           "Please try again later"
+       )
+      end
     when /search/i
-      array_param = command.split
+      array_param = message.text.split
+      if (array_param.length == 1)
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: "You have to indicate a parameter for the command /search . i.e. /search ruby"
+        )
+      end
       array_param.shift
       query_param = URI::encode(array_param.join(' '))
-      puts query_param
       if (query_param.length > 51)
-        reply.text = "Sorry, I can only search books with less than 50 characters"
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: "Sorry, I can only search books with less than 50 characters"
+        )
       else 
-        response = HTTParty.get("#{url}search/#{query_param}")
+        response = HTTParty.get("#{base_url}search/#{query_param}")
         if (response.code == 200) 
           json = JSON.parse(response.body)
-          if (json['Total'] == "0")
-            reply.text = "I couldn't find any books with the text #{query_param}"
+          if (json['Total'] == '0')
+            bot.api.send_message(
+              chat_id: message.chat.id,
+              text: "I couldn't find any books with the title '#{query_param}'"
+            ) 
           else
-            book = json['Books'][0]
-            puts book
-            response = HTTParty.get("#{url}book/#{book['ID']}")
-            if (response.code == 200) 
-              book_detail = JSON.parse(response.body)
-              reply.text = "This is the best match I could get: " <<
-              "#{book_detail['Title']} (#{book_detail['Year']}) by " <<
-              "#{book_detail['Author']}" <<
-              "#{book_detail['Download']}"
-            else
-              reply.text = "There was an error trying to communicate with It-Ebooks. " <<
-                "Please try again later"
+            filtered_books = json['Books']
+            question = "Which of these books are you trying to download?\n\n"
+            filtered_books.each do |book|
+              question << "/#{book['ID']} - #{book['Title']} - #{book['SubTitle']}\n"
             end
+            bot.api.send_message(
+              chat_id: message.chat.id,
+              text: question
+            )
           end
         else
-          reply.text = "There was an error trying to communicate with It-Ebooks. " <<
-            "Please try again later"
+          bot.api.send_message(
+            chat_id: message.chat.id,
+            text: "There was an error trying to communicate with It-Ebooks. " <<
+              "Please try again later"
+          )
         end
       end
-    else
-      reply.text = "#{message.from.first_name}, have no idea what #{command.inspect} means."
     end
-    puts "sending #{reply.text.inspect} to @#{message.from.username}"
-    reply.send_with(bot)
+    puts "Response to question #{message.text} sent to @#{message.chat.username}"
   end
 end
