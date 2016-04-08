@@ -1,5 +1,5 @@
 # it-books-bot
-Search for books in Telegram
+Search and download books from Telegram
 
 Use the command **/search** and pass the title of the book you are looking for.
 

@@ -33,7 +33,9 @@ bot.get_updates(fail_silently: true) do |message|
             if (response.code == 200) 
               book_detail = JSON.parse(response.body)
               reply.text = "This is the best match I could get: " <<
-              "#{book_detail['Title']} " << "#{book_detail['Download']}"
+              "#{book_detail['Title']} (#{book_detail['Year']}) by " <<
+              "#{book_detail['Author']}" <<
+              "#{book_detail['Download']}"
             else
               reply.text = "There was an error trying to communicate with It-Ebooks. " <<
                 "Please try again later"
