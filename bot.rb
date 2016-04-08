@@ -44,6 +44,7 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
            "Please try again later"
        )
       end
+    #TODO El parámetro no debe estar seguido del comando si no después de enviar el comando 
     when /search/i
       array_param = message.text.split
       array_param.shift
