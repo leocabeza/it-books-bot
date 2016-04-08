@@ -11,7 +11,12 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
   bot.listen do |message|
     case message.text
     when '/start'
-      bot.api.send_message(chat_id: message.chat.id, text: "Hello, #{message.from.first_name}")
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: "Hello, #{message.from.first_name}, " << 
+          "to start searching for books, use the command /search " <<
+          "passing the name of the book as a parameter"
+        )
     when '/help'
       bot.api.send_message(chat_id: message.chat.id, text: "Available commands: /search")
     when /^\/[0-9]+$/
@@ -41,14 +46,9 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
       end
     when /search/i
       array_param = message.text.split
-      if (array_param.length == 1)
-        bot.api.send_message(
-          chat_id: message.chat.id,
-          text: "You have to indicate a parameter for the command /search . i.e. /search ruby"
-        )
-      end
       array_param.shift
       query_param = URI::encode(array_param.join(' '))
+
       if (query_param.length > 51)
         bot.api.send_message(
           chat_id: message.chat.id,
@@ -58,12 +58,7 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
         response = HTTParty.get("#{base_url}search/#{query_param}")
         if (response.code == 200) 
           json = JSON.parse(response.body)
-          if (json['Total'] == '0')
-            bot.api.send_message(
-              chat_id: message.chat.id,
-              text: "I couldn't find any books with the title '#{query_param}'"
-            ) 
-          else
+          if (json['Error'] == '0' && json['Total'] != '0')
             filtered_books = json['Books']
             question = "Which of these books are you trying to download?\n\n"
             filtered_books.each do |book|
@@ -73,6 +68,11 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
               chat_id: message.chat.id,
               text: question
             )
+          else
+            bot.api.send_message(
+              chat_id: message.chat.id,
+              text: "I couldn't find any books with the title '#{query_param}'"
+            )            
           end
         else
           bot.api.send_message(
