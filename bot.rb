@@ -7,6 +7,8 @@ require 'yaml'
 config = YAML.load_file('config.yml')
 base_url = 'http://it-ebooks-api.info/v1/'
 
+#TODO un modulo que haga de wrapper al api de it-books donde maneje toda la lógica del response
+
 Telegram::Bot::Client.run(config['telegram_key']) do |bot|
   bot.listen do |message|
     case message.text
