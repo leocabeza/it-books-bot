@@ -7,8 +7,6 @@ require 'yaml'
 config = YAML.load_file('config.yml')
 base_url = 'http://it-ebooks-api.info/v1/'
 
-#TODO un modulo que haga de wrapper al api de it-books donde maneje toda la lógica del response
-
 Telegram::Bot::Client.run(config['telegram_key']) do |bot|
   bot.listen do |message|
     case message.text
@@ -46,7 +44,6 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
            "Please try again later"
        )
       end
-    #TODO El parámetro no debe estar seguido del comando si no después de enviar el comando 
     when /search/i
       array_param = message.text.split
       array_param.shift
@@ -69,7 +66,8 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
             end
             bot.api.send_message(
               chat_id: message.chat.id,
-              text: question
+              text: question,
+              disable_web_page_preview: true
             )
           else
             bot.api.send_message(
