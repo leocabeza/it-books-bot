@@ -1,11 +1,8 @@
 require 'telegram/bot'
-require 'httparty'
-require 'json'
-require 'open-uri'
 require 'yaml'
+require './lib/bot/it_ebook.rb'
 
 config = YAML.load_file('config.yml')
-base_url = 'http://it-ebooks-api.info/v1/'
 
 Telegram::Bot::Client.run(config['telegram_key']) do |bot|
   bot.listen do |message|
@@ -18,70 +15,62 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
           "passing the name of the book as a parameter"
         )
     when '/help'
-      bot.api.send_message(chat_id: message.chat.id, text: "Available commands: /search")
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: "Available commands: /search"
+      )
     when /^\/[0-9]+$/
-      response = HTTParty.get("#{base_url}book/#{message.text}")
-      if (response.code == 200) 
-       book_detail = JSON.parse(response.body)
-        if (book_detail['Error'] == '0')
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: "Here you go: " <<
-              "#{book_detail['Title']} (#{book_detail['Year']}) by " <<
-              "#{book_detail['Author']} " <<
-              "#{book_detail['Download']}"
-          )
-        else
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: "The book was not found, please try again later"
-          )
-        end
-      else
-       bot.api.send_message(
-         chat_id: message.chat.id,
-         text: "There was an error trying to communicate with It-Ebooks. " <<
-           "Please try again later"
-       )
+      begin
+        book = Bot::Book.find(message.text)
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: "Here you go:\n " <<
+            "#{book.title} (#{book.year}) by " <<
+            "#{book.author} " <<
+            "#{book.download}"
+        )
+      rescue Bot::NoBookFoundError => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
+      rescue Bot::BadConnectionError => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
       end
     when /search/i
       array_param = message.text.split
       array_param.shift
-      query_param = URI::encode(array_param.join(' '))
+      query_param = array_param.join(' ')
 
-      if (query_param.length > 51)
+      begin
+        books = Bot::Book.search(query_param)
+        question = "Which of these books are you trying to download?\n\n"
+        books.each do |book|
+          question << "/#{book.id} - #{book.title} - #{book.sub_title}\n"
+        end
         bot.api.send_message(
           chat_id: message.chat.id,
-          text: "Sorry, I can only search books with less than 50 characters"
+          text: question,
+          disable_web_page_preview: true
         )
-      else 
-        response = HTTParty.get("#{base_url}search/#{query_param}")
-        if (response.code == 200) 
-          json = JSON.parse(response.body)
-          if (json['Error'] == '0' && json['Total'] != '0')
-            filtered_books = json['Books']
-            question = "Which of these books are you trying to download?\n\n"
-            filtered_books.each do |book|
-              question << "/#{book['ID']} - #{book['Title']} - #{book['SubTitle']}\n"
-            end
-            bot.api.send_message(
-              chat_id: message.chat.id,
-              text: question,
-              disable_web_page_preview: true
-            )
-          else
-            bot.api.send_message(
-              chat_id: message.chat.id,
-              text: "I couldn't find any books with the title '#{query_param}'"
-            )            
-          end
-        else
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: "There was an error trying to communicate with It-Ebooks. " <<
-              "Please try again later"
-          )
-        end
+      rescue Bot::QueryTooLongError => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
+      rescue Bot::NoBookFoundError => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
+      rescue Bot::BadConnectionError => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
       end
     end
     puts "Response to question #{message.text} sent to @#{message.chat.username}"
