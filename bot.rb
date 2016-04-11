@@ -2,7 +2,7 @@ require 'telegram/bot'
 require 'yaml'
 require './lib/bot/it_ebook.rb'
 
-config = YAML.load_file('config.yml')
+config = YAML.load_file('config/secrets.yml')
 
 Telegram::Bot::Client.run(config['telegram_key']) do |bot|
   bot.listen do |message|
