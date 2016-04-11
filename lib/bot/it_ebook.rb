@@ -4,7 +4,8 @@ require_relative './version.rb'
 require 'pp'
 
 module Bot
-  class Book include HTTParty
+  class Book
+    include HTTParty
 
     base_uri 'http://it-ebooks-api.info/v1/'
 
