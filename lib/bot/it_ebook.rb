@@ -1,6 +1,7 @@
 require 'httparty'
 require 'open-uri'
 require_relative './version.rb'
+require 'pp'
 
 module Bot
   class Book include HTTParty
@@ -77,7 +78,7 @@ module Bot
       super
     end
   end
-  class ConnectionErrorError < StandardError
+  class BadConnectionError < StandardError
     def initialize(msg="There was an error " <<
       " trying to communicate with It-Ebooks. " <<
       "Please try again later")

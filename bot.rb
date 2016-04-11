@@ -49,7 +49,9 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
         books = Bot::Book.search(query_param)
         question = "Which of these books are you trying to download?\n\n"
         books.each do |book|
-          question << "/#{book.id} - #{book.title} - #{book.sub_title}\n"
+          question << "/#{book.id} - #{book.title} "
+          question << "- #{book.sub_title}" if book.respond_to?(:sub_title)
+          question << "\n"
         end
         bot.api.send_message(
           chat_id: message.chat.id,
