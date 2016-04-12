@@ -40,7 +40,7 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
           text: e.message
         )
       end
-    when /search/i
+    when /^\/search/i
       array_param = message.text.split
       array_param.shift
       query_param = array_param.join(' ')

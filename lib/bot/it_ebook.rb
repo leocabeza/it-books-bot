@@ -11,19 +11,25 @@ module Bot
 
     def initialize attrs
       attrs.each do |name, val|
-        if name == 'ID'
-          lower_camel_cased = 'id'
-        elsif name == 'ISBN'
-          lower_camel_cased = 'isbn'
-        else
-          lower_camel_cased = name.gsub(/(.)([A-Z])/,'\1_\2').downcase
-        end
+        lower_camel_cased = underscore(name)
         instance_variable_set "@#{lower_camel_cased}", val
 
         define_singleton_method lower_camel_cased.to_sym do
           instance_variable_get "@#{lower_camel_cased}"
         end
       end
+    end
+
+    private
+
+    def underscore(word)
+      modified_word = word.dup
+      modified_word.gsub!(/::/, '/')
+      modified_word.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+      modified_word.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+      modified_word.tr!("-", "_")
+      modified_word.downcase!
+      modified_word
     end
 
     class << self
