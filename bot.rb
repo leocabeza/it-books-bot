@@ -25,7 +25,7 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
         bot.api.send_message(
           chat_id: message.chat.id,
           text: "Here you go:\n " <<
-            "#{book.title} (#{book.year}) by " <<
+            "#{book.image}\n#{book.title} (#{book.year}) by " <<
             "#{book.author} " <<
             "#{book.download}"
         )
