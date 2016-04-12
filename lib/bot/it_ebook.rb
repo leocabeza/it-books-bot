@@ -47,7 +47,7 @@ module Bot
             parsed.delete 'Error'
             parsed.delete 'Time'
 
-            self.new parsed
+            self.new parsed, 1
           else
             raise NoBookFoundError
           end
