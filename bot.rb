@@ -13,11 +13,11 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
         text: "Hello, #{message.from.first_name}, " << 
           "to start searching for books, use the command /search " <<
           "passing the name of the book as a parameter"
-        )
+      )
     when '/help'
       bot.api.send_message(
         chat_id: message.chat.id,
-        text: "Available commands: /search"
+        text: 'Available commands: /search'
       )
     when /^\/[0-9]+$/
       begin
@@ -41,12 +41,20 @@ Telegram::Bot::Client.run(config['telegram_key']) do |bot|
         )
       end
     when /^\/search/i
-      array_param = message.text.split
-      array_param.shift
-      query_param = array_param.join(' ')
-
+      reply_markup = Telegram::Bot::Types::ForceReply.new(force_reply: true)
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: 'Type the name of the book you want to download',
+        reply_markup: reply_markup
+      )
+    when /^\/[a-zA-Z0-9]+$/
+      bot.api.send_message(
+        chat_id: message.chat.id,
+        text: "Sorry, I can't understand that command"
+      )
+    else
       begin
-        books = Bot::Book.search(query_param)
+        books = Bot::Book.search(message.text)
         question = "Which of these books are you trying to download?\n\n"
         books.each do |book|
           question << "/#{book.id} - #{book.title} "
