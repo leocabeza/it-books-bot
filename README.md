@@ -1,8 +1,9 @@
 # it-books-bot
 Search and download books from Telegram
 
-Available commands:
+Only available through bot handler:
+```
+@itbooksbot ruby
+```
 
-* /search
-
-# Add me on Telegram: [itbooks](tg://resolve?domain=itbooksbot)
+# Add me on Telegram: [@itbooksbot](https://telegram.me/itbooksbot)
