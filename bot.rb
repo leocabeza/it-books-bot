@@ -32,15 +32,20 @@ Telegram::Bot::Client.run(token) do |bot|
           books = Bot::Book.search(message.query)
           books.each do |book|
             find_book = Bot::Book.find(book.id)
+            keyboard = [
+              Telegram::Bot::Types::InlineKeyboardButton
+                .new(text: 'Download', url: find_book.download)
+            ]
+            markup = Telegram::Bot::Types::InlineKeyboardMarkup
+              .new(inline_keyboard: keyboard)
             result = Telegram::Bot::Types::InlineQueryResultPhoto.new(
               id: find_book.id,
               photo_url: find_book.image,
               thumb_url: find_book.image,
               disable_web_page_preview: true,
-              caption: "Here you go:\n " <<
-                "#{find_book.title} (#{find_book.year}) by " <<
-                "#{find_book.author} " <<
-                "#{find_book.download}"
+              caption: "#{find_book.title} (#{find_book.year}) by " <<
+                "#{find_book.author}",
+              reply_markup: markup
             )
             results.push(result)
           end
@@ -70,8 +75,6 @@ Telegram::Bot::Client.run(token) do |bot|
           text: e.message
         )
       end
-    else
-      puts 'Unsupported operation'
     end
   end
 end
