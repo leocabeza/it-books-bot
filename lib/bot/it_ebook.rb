@@ -9,7 +9,7 @@ module Bot
 
     base_uri 'http://it-ebooks-api.info/v1/'
 
-    def initialize attrs, total
+    def initialize attrs
       attrs.each do |name, val|
         lower_camel_cased = underscore(name)
         instance_variable_set "@#{lower_camel_cased}", val
@@ -17,11 +17,6 @@ module Bot
         define_singleton_method lower_camel_cased.to_sym do
           instance_variable_get "@#{lower_camel_cased}"
         end
-      end
-      instance_variable_set "@total", total
-
-      define_singleton_method :total do
-        instance_variable_get "@total"
       end
     end
 
@@ -47,7 +42,7 @@ module Bot
             parsed.delete 'Error'
             parsed.delete 'Time'
 
-            self.new parsed, 1
+            self.new parsed
           else
             raise NoBookFoundError
           end
@@ -60,19 +55,24 @@ module Bot
         if (query.length > 50)
           raise QueryTooLongError
         else
-          encoded_query = URI::encode(query)
-          response = get("/search/#{encoded_query}")
-          if (response.code == 200)
-            parsed = response.parsed_response
-            if (parsed['Error'] == '0' &&
-              parsed['Total'] != '0')
-                parsed['Books'].map { |b| self.new b, parsed['Total']}
-            else
-              raise NoBookFoundError
-            end
+          get_books(query).map{ |b| self.new b}
+        end
+      end
+
+      private
+
+      def get_books(query)
+        encoded_query = URI::encode(query)
+        response = get("/search/#{encoded_query}")
+        if (response.code == 200)
+          parsed = response.parsed_response
+          if (parsed['Total'] != '0' && parsed['Error'] == '0')
+            parsed
           else
-            raise BadConnectionError
+            raise NoBookFoundError
           end
+        else
+          raise BadConnectionError
         end
       end
     end
