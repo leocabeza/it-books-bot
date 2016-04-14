@@ -34,21 +34,11 @@ module Bot
 
     class << self
       def find(id)
-        response = get("/book/#{id.to_s}")
-        if (response.code == 200)
-          parsed = response.parsed_response
+        book = get_request("/book/#{id.to_s}")
+        book.delete 'Error'
+        book.delete 'Time'
 
-          if (parsed['Error'] == '0')
-            parsed.delete 'Error'
-            parsed.delete 'Time'
-
-            self.new parsed
-          else
-            raise NoBookFoundError
-          end
-        else
-          raise ConnectionErrorError
-        end
+        self.new book
       end
 
       def search(query)
@@ -63,22 +53,33 @@ module Bot
 
       def get_books(query)
         encoded_query = URI::encode(query)
-        response = get("/search/#{encoded_query}")
-        if (response.code == 200)
+        books = get_request("/search/#{encoded_query}")
+        if (books['Total'] == '0')
+          raise NoBookFoundError
+        else
+          books['Books']
+        end
+      end
+
+      def get_request(url)
+        response = get(url)
+        if(response.code == 200)
           parsed = response.parsed_response
-          if (parsed['Error'] == '0')
-            if (parsed['Total'] == '0')
-              raise NoBookFoundError
-            else
-              parsed
-            end
+          if (parsed['Error'] == '0') # means OK
+            parsed
           else
-            puts parsed['Error']
+            raise ApiError, parsed['Error']
           end
         else
           raise BadConnectionError
         end
       end
+    end
+  end
+
+  class ApiError < StandardError
+    def initialize(msg)
+      super
     end
   end
 
