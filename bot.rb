@@ -9,8 +9,9 @@ Telegram::Bot::Client.run(token) do |bot|
     when Telegram::Bot::Types::ChosenInlineResult
       puts message
     when Telegram::Bot::Types::CallbackQuery
+      # this is only for button and pagination
       begin
-        book = Bot::Book.find(message.data)
+        book = Bot::Book.search(message.data)
         bot.api.send_message(
           chat_id: message.from.id,
           text: "Here you go:\n " <<
@@ -18,14 +19,9 @@ Telegram::Bot::Client.run(token) do |bot|
             "#{book.author} " <<
             "#{book.download}"
         )
-      rescue Bot::NoBookFoundError => e
+      rescue Exception => e
         bot.api.send_message(
           chat_id: message.from.id,
-          text: e.message
-        )
-      rescue Bot::BadConnectionError => e
-        bot.api.send_message(
-          from_id: message.from.id,
           text: e.message
         )
       end
@@ -45,19 +41,26 @@ Telegram::Bot::Client.run(token) do |bot|
       when /^\/[0-9]+$/
         begin
           book = Bot::Book.find(message.text)
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: "Here you go222:\n " <<
-              "#{book.title} (#{book.year}) by " <<
-              "#{book.author} " <<
-              "#{book.download}"
+          keyboard = [
+            Telegram::Bot::Types::InlineKeyboardButton
+              .new(text: 'Download', url: book.download)
+          ]
+          markup = Telegram::Bot::Types::InlineKeyboardMarkup
+            .new(inline_keyboard: keyboard)
+          result = Telegram::Bot::Types::InlineQueryResultPhoto.new(
+            id: book.id,
+            photo_url: book.image,
+            thumb_url: book.image,
+            disable_web_page_preview: true,
+            caption: "#{book.title} (#{book.year}) by " <<
+              "#{book.author}",
+            reply_markup: markup
           )
-        rescue Bot::NoBookFoundError => e
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: e.message
+          bot.api.answer_inline_query(
+            inline_query_id: message.chat.id,
+            result: [result]
           )
-        rescue Bot::BadConnectionError => e
+        rescue Bot::Exception => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
