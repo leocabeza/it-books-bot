@@ -6,6 +6,8 @@ token = YAML::load(IO.read('config/secrets.yml'))['telegram_token']
 Telegram::Bot::Client.run(token) do |bot|
   bot.listen do |message|
     case message
+    when Telegram::Bot::Types::ChosenInlineResult
+      puts message
     when Telegram::Bot::Types::CallbackQuery
       begin
         book = Bot::Book.find(message.data)
@@ -28,6 +30,7 @@ Telegram::Bot::Client.run(token) do |bot|
         )
       end
     when Telegram::Bot::Types::Message
+      case message.text
       when '/start'
         bot.api.send_message(
           chat_id: message.chat.id,
@@ -72,8 +75,6 @@ Telegram::Bot::Client.run(token) do |bot|
           chat_id: message.chat.id,
           text: "Sorry, I can't understand that command"
         )
-=begin
-
       else
         begin
           books = Bot::Book.search(message.text)
@@ -89,23 +90,12 @@ Telegram::Bot::Client.run(token) do |bot|
             disable_web_page_preview: true,
             parse_mode: 'html'
           )
-        rescue Bot::QueryTooLongError => e
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: e.message
-          )
-        rescue Bot::NoBookFoundError => e
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: e.message
-          )
-        rescue Bot::BadConnectionError => e
+        rescue Exception => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
           )
         end
-=end
       end
       puts "Response to question #{message.text} sent to @#{message.chat.username}"
     end
