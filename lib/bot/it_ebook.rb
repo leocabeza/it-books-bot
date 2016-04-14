@@ -66,12 +66,14 @@ module Bot
         response = get("/search/#{encoded_query}")
         if (response.code == 200)
           parsed = response.parsed_response
-          if (parsed['Error'] != '0')
-            puts parsed['Error']
-          elsif (parsed['Total'] != '0' && parsed['Error'] == '0')
-            parsed
+          if (parsed['Error'] == '0')
+            if (parsed['Total'] == '0')
+              raise NoBookFoundError
+            else
+              parsed
+            end
           else
-            raise NoBookFoundError
+            puts parsed['Error']
           end
         else
           raise BadConnectionError
