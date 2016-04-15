@@ -30,7 +30,7 @@ Telegram::Bot::Client.run(token) do |bot|
         )
       rescue Exception => e
         bot.api.send_message(
-          chat_id: message.chat.id,
+          chat_id: message.from.id,
           text: e.message
         )
       end
