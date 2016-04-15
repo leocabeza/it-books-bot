@@ -8,7 +8,8 @@ Telegram::Bot::Client.run(token) do |bot|
     case message
     when Telegram::Bot::Types::CallbackQuery
       begin
-        page_to_look_for = 1 + message.data.to_s[0].to_i
+        query = message.data.split('/')[0]
+        page_to_look_for = 1 + message.data.split[1][0].to_i
         #TODO we have to know which page is limit
         books = Bot::Book.search(message.text, page_to_look_for)
         books.each do |book|
@@ -87,7 +88,7 @@ Telegram::Bot::Client.run(token) do |bot|
           end
           kb = [
             Telegram::Bot::Types::InlineKeyboardButton
-              .new(text: 'Load more', callback_data: '"#{books[0].page}"')
+              .new(text: 'Load more', callback_data: "#{message.text}/#{books[0].page}")
           ]
           markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
           bot.api.send_message(
