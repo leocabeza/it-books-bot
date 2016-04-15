@@ -7,23 +7,33 @@ Telegram::Bot::Client.run(token) do |bot|
   bot.listen do |message|
     case message
     when Telegram::Bot::Types::CallbackQuery
-      puts message
-      # this is only for button and pagination
-      #begin
-      #  book = Bot::Book.search(message.data)
-      #  bot.api.edit_message_text(
-      #    chat_id: message.from.id,
-      #    text: "Here you go:\n " <<
-      #      "#{book.title} (#{book.year}) by " <<
-      #      "#{book.author} " <<
-      #      "#{book.download}"
-      #  )
-      #rescue Exception => e
-      #  bot.api.send_message(
-      #    chat_id: message.from.id,
-      #    text: e.message
-      #  )
-      #end
+      begin
+        page_to_look_for = 1 + message.data.to_s[0].to_i
+        #TODO we have to know which page is limit
+        books = Bot::Book.search(message.text, page_to_look_for)
+        books.each do |book|
+          question << "/#{book.id} - #{book.title}"
+          question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
+          question << "\n"
+        end
+        kb = [
+          Telegram::Bot::Types::InlineKeyboardButton
+            .new(text: 'Load more', callback_data: '"#{books[0].page}"')
+        ]
+        markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+        bot.api.edit_message_text(
+          chat_id: message.chat.id,
+          text: question,
+          disable_web_page_preview: true,
+          reply_markup: markup,
+          parse_mode: 'html'
+        )
+      rescue Exception => e
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: e.message
+        )
+      end
     when Telegram::Bot::Types::Message
       case message.text
       when '/start'
@@ -84,9 +94,10 @@ Telegram::Bot::Client.run(token) do |bot|
             chat_id: message.chat.id,
             text: question,
             disable_web_page_preview: true,
-            reply_markup: markup
+            reply_markup: markup,
+            parse_mode: 'html'
           )
-        rescue Bot::ApiError => e
+        rescue Exception => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
