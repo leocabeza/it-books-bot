@@ -11,7 +11,7 @@ Telegram::Bot::Client.run(token) do |bot|
         query = message.data.split('/')[0]
         page_to_look_for = 1 + message.data.split('/')[1][0].to_i
         #TODO we have to know which page is limit
-        books = Bot::Book.search(message.text, page_to_look_for)
+        books = Bot::Book.search(query, page_to_look_for)
         books.each do |book|
           question << "/#{book.id} - #{book.title}"
           question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
