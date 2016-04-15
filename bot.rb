@@ -9,7 +9,7 @@ Telegram::Bot::Client.run(token) do |bot|
     when Telegram::Bot::Types::CallbackQuery
       begin
         query = message.data.split('/')[0]
-        page_to_look_for = 1 + message.data.split[1][0].to_i
+        page_to_look_for = 1 + message.data.split('/')[1][0].to_i
         #TODO we have to know which page is limit
         books = Bot::Book.search(message.text, page_to_look_for)
         books.each do |book|
