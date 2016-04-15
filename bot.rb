@@ -22,7 +22,7 @@ Telegram::Bot::Client.run(token) do |bot|
         ]
         markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
         bot.api.edit_message_text(
-          chat_id: message.chat.id,
+          chat_id: message.from.id,
           text: question,
           disable_web_page_preview: true,
           reply_markup: markup,
