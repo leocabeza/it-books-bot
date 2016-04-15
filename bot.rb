@@ -86,7 +86,7 @@ Telegram::Bot::Client.run(token) do |bot|
             disable_web_page_preview: true,
             reply_markup: markup
           )
-        rescue Bot::Book::ApiError => e
+        rescue Bot::ApiError => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
