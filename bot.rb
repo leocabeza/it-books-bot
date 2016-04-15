@@ -20,7 +20,7 @@ Telegram::Bot::Client.run(token) do |bot|
         end
         kb = [
           Telegram::Bot::Types::InlineKeyboardButton
-            .new(text: 'Load more', callback_data: '"#{books[0].page}"')
+            .new(text: 'Load more', callback_data: "#{message.text}/#{books[0].page}")
         ]
         markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
         bot.api.edit_message_text(
@@ -78,34 +78,6 @@ Telegram::Bot::Client.run(token) do |bot|
           chat_id: message.chat.id,
           text: "Sorry, I can't understand that command"
         )
-      else
-        begin
-          books = Bot::Book.search(message.text)
-          question = "I found <b>#{books[0].total}</b> results\n"
-          question << "Which of these books are you trying to download?\n\n"
-          books.each do |book|
-            question << "/#{book.id} - #{book.title}"
-            question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
-            question << "\n"
-          end
-          kb = [
-            Telegram::Bot::Types::InlineKeyboardButton
-              .new(text: 'Load more', callback_data: "#{message.text}/#{books[0].page}")
-          ]
-          markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: question,
-            disable_web_page_preview: true,
-            reply_markup: markup,
-            parse_mode: 'html'
-          )
-        rescue Exception => e
-          bot.api.send_message(
-            chat_id: message.chat.id,
-            text: e.message
-          )
-        end
       end
       puts "Response to question #{message.text} sent to @#{message.chat.username}"
     end
