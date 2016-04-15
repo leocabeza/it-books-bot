@@ -77,7 +77,7 @@ Telegram::Bot::Client.run(token) do |bot|
           end
           kb = [
             Telegram::Bot::Types::InlineKeyboardButton
-              .new(text: 'Load more', callback_data: books[0].page)
+              .new(text: 'Load more', callback_data: '"#{books[0].page}"')
           ]
           markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
           bot.api.send_message(
