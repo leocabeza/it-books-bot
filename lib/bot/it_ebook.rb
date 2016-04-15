@@ -55,8 +55,9 @@ module Bot
         if (query.length > 50)
           raise QueryTooLongError
         else
-          get_books(query, page).map do |b|
-            self.new b['Books'], b['Total'], b['Page']
+          books = get_books(query, page)
+          books['Books'].map do |b|
+            self.new b, books['Total'], books['Page']
           end
         end
       end
