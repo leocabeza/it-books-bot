@@ -6,25 +6,24 @@ token = YAML::load(IO.read('config/secrets.yml'))['telegram_token']
 Telegram::Bot::Client.run(token) do |bot|
   bot.listen do |message|
     case message
-    when Telegram::Bot::Types::ChosenInlineResult
-      puts message
     when Telegram::Bot::Types::CallbackQuery
+      puts message
       # this is only for button and pagination
-      begin
-        book = Bot::Book.search(message.data)
-        bot.api.send_message(
-          chat_id: message.from.id,
-          text: "Here you go:\n " <<
-            "#{book.title} (#{book.year}) by " <<
-            "#{book.author} " <<
-            "#{book.download}"
-        )
-      rescue Exception => e
-        bot.api.send_message(
-          chat_id: message.from.id,
-          text: e.message
-        )
-      end
+      #begin
+      #  book = Bot::Book.search(message.data)
+      #  bot.api.edit_message_text(
+      #    chat_id: message.from.id,
+      #    text: "Here you go:\n " <<
+      #      "#{book.title} (#{book.year}) by " <<
+      #      "#{book.author} " <<
+      #      "#{book.download}"
+      #  )
+      #rescue Exception => e
+      #  bot.api.send_message(
+      #    chat_id: message.from.id,
+      #    text: e.message
+      #  )
+      #end
     when Telegram::Bot::Types::Message
       case message.text
       when '/start'
@@ -41,26 +40,14 @@ Telegram::Bot::Client.run(token) do |bot|
       when /^\/[0-9]+$/
         begin
           book = Bot::Book.find(message.text)
-          keyboard = [
-            Telegram::Bot::Types::InlineKeyboardButton
-              .new(text: 'Download', url: book.download)
-          ]
-          markup = Telegram::Bot::Types::InlineKeyboardMarkup
-            .new(inline_keyboard: keyboard)
-          result = Telegram::Bot::Types::InlineQueryResultPhoto.new(
-            id: book.id,
-            photo_url: book.image,
-            thumb_url: book.image,
-            disable_web_page_preview: true,
-            caption: "#{book.title} (#{book.year}) by " <<
-              "#{book.author}",
-            reply_markup: markup
+          bot.api.send_message(
+            chat_id: message.chat.id,
+            text: "Here you go:\n " <<
+              "#{book.title} (#{book.year}) by " <<
+              "#{book.author} " <<
+              "#{book.download}"
           )
-          bot.api.answer_inline_query(
-            inline_query_id: message.chat.id,
-            result: [result]
-          )
-        rescue Bot::Exception => e
+        rescue Exception => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
@@ -81,17 +68,23 @@ Telegram::Bot::Client.run(token) do |bot|
       else
         begin
           books = Bot::Book.search(message.text)
-          question = "Which of these books are you trying to download?\n\n"
+          question = "I found <b>#{books[0].total}</b> results\n"
+          question << "Which of these books are you trying to download?\n\n"
           books.each do |book|
             question << "/#{book.id} - #{book.title}"
             question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
             question << "\n"
           end
+          kb = [
+            Telegram::Bot::Types::InlineKeyboardButton
+              .new(text: 'Load more', callback_data: books[0].page)
+          ]
+          markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
           bot.api.send_message(
             chat_id: message.chat.id,
             text: question,
             disable_web_page_preview: true,
-            parse_mode: 'html'
+            reply_markup: markup
           )
         rescue Exception => e
           bot.api.send_message(

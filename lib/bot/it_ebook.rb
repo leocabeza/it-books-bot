@@ -9,7 +9,7 @@ module Bot
 
     base_uri 'http://it-ebooks-api.info/v1/'
 
-    def initialize attrs
+    def initialize attrs, total, page
       attrs.each do |name, val|
         lower_camel_cased = underscore(name)
         instance_variable_set "@#{lower_camel_cased}", val
@@ -17,6 +17,16 @@ module Bot
         define_singleton_method lower_camel_cased.to_sym do
           instance_variable_get "@#{lower_camel_cased}"
         end
+      end
+
+      instance_variable_set "@total", total
+      instance_variable_set "@page", page
+      
+      define_singleton_method :total do
+        instance_variable_get "@total"
+      end
+      define_singleton_method :page do
+        instance_variable_get "@page"
       end
     end
 
@@ -38,26 +48,30 @@ module Bot
         book.delete 'Error'
         book.delete 'Time'
 
-        self.new book
+        self.new book, 1, 1
       end
 
-      def search(query)
+      def search(query, page=1)
         if (query.length > 50)
           raise QueryTooLongError
         else
-          get_books(query).map{ |b| self.new b}
+          get_books(query, page).map do |b|
+            self.new b['Books'], b['Total'], b['Page']
+          end
         end
       end
 
       private
 
-      def get_books(query)
+      def get_books(query, page=1)
         encoded_query = URI::encode(query)
-        books = get_request("/search/#{encoded_query}")
+        search_url = "/search/#{encoded_query}"
+        search_url << "/page/#{page}" if page != 1
+        books = get_request(search_url)
         if (books['Total'] == '0')
           raise NoBookFoundError
         else
-          books['Books']
+          books
         end
       end
 
