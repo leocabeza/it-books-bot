@@ -1,7 +1,5 @@
 require 'httparty'
-require 'open-uri'
 require_relative './version.rb'
-require 'pp'
 
 module Bot
   class Book
@@ -65,8 +63,7 @@ module Bot
       private
 
       def get_books(query, page=1)
-        encoded_query = URI::encode(query)
-        search_url = "/search/#{encoded_query}"
+        search_url = "/search/#{query}"
         search_url << "/page/#{page}" if page != 1
         books = get_request(search_url)
         if (books['Total'] == '0')
@@ -106,13 +103,13 @@ module Bot
   end
   class NoBookFoundError < StandardError
     def initialize(msg="I couldn't find any books " <<
-      " with the title given")
+      "with the title given")
       super
     end
   end
   class BadConnectionError < StandardError
     def initialize(msg="There was an error " <<
-      " trying to communicate with It-Ebooks. " <<
+      "trying to communicate with It-Ebooks. " <<
       "Please try again later")
       super
     end
