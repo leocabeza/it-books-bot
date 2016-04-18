@@ -127,10 +127,12 @@ Telegram::Bot::Client.run(token) do |bot|
             Telegram::Bot::Types::InlineKeyboardButton
               .new(
                 text: 'Load more',
-                callback_data: "#{encoded_query}//#{books[0].page}//#{books[0].total}"
+                callback_data: "#{encoded_query}//" <<
+                  "#{books[0].page}//#{books[0].total}"
               )
           ]
-          markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+          markup = Telegram::Bot::Types::InlineKeyboardMarkup
+            .new(inline_keyboard: kb)
           bot.api.send_message(
             chat_id: message.chat.id,
             text: question,
@@ -138,7 +140,12 @@ Telegram::Bot::Client.run(token) do |bot|
             parse_mode: 'html',
             reply_markup: markup
           )
-        rescue Bot::QueryTooLongError => e
+        rescue Bot::BadConnectionError => e
+          bot.api.send_message(
+            chat_id: message.chat.id,
+            text: e.message
+          )
+        rescue Bot::NoQueryError => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
@@ -155,7 +162,8 @@ Telegram::Bot::Client.run(token) do |bot|
           )
         end
       end
-      puts "Response to question #{message.text} sent to @#{message.chat.username}"
+      puts "Response to question #{message.text} " <<
+        "sent to @#{message.chat.username}"
     end
   end
 end

@@ -50,6 +50,9 @@ module Bot
       end
 
       def search(query, page=1)
+        if (query == '')
+          raise NoQueryError
+        end
         if (query.length > 50)
           raise QueryTooLongError
         else
@@ -105,6 +108,11 @@ module Bot
     def initialize(msg="I couldn't find any books " <<
       "with the title given")
       super
+    end
+  end
+  class NoQueryError < StandardError
+    def initialize(msg="No query has been provided " <<
+      "for the search")      
     end
   end
   class BadConnectionError < StandardError
