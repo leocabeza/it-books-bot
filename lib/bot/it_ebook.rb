@@ -50,11 +50,10 @@ module Bot
       end
 
       def search(query, page=1)
-        if (query == '')
-          raise NoQueryError
-        end
         if (query.length > 50)
           raise QueryTooLongError
+        elsif (query.length == 0)
+          raise QueryNullError
         else
           books = get_books(query, page)
           books['Books'].map do |b|
@@ -62,7 +61,11 @@ module Bot
           end
         end
       end
-
+      
+      def get_book_info(book)
+        format_book_info(book)
+      end
+      
       private
 
       def get_books(query, page=1)
@@ -74,6 +77,14 @@ module Bot
         else
           books
         end
+      end
+
+      def format_book_info(book)
+        msg = "\nHere you go:\n " <<
+          "#{book.image}\n<b>#{book.title}</b> (#{book.year}) by " <<
+          "<i>#{book.author}</i> " <<
+          "\n\n<a href='#{book.download}'>Download here</a>"
+        msg
       end
 
       def get_request(url)
@@ -101,6 +112,12 @@ module Bot
   class QueryTooLongError < StandardError
     def initialize(msg="Sorry, I can only search books " <<
       "with less than 50 characters")
+      super
+    end
+  end
+  class QueryNullError < StandardError
+    def initialize(msg="Sorry, I can only find books " <<
+      "with an actual name")
       super
     end
   end
