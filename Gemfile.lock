@@ -35,6 +35,3 @@ PLATFORMS
 DEPENDENCIES
   httparty
   telegram-bot-ruby
-
-BUNDLED WITH
-   1.11.2

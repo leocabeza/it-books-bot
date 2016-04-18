@@ -52,6 +52,8 @@ module Bot
       def search(query, page=1)
         if (query.length > 50)
           raise QueryTooLongError
+        elsif (query.length == 0)
+          raise QueryNullError
         else
           books = get_books(query, page)
           books['Books'].map do |b|
@@ -59,7 +61,11 @@ module Bot
           end
         end
       end
-
+      
+      def get_book_info(book)
+        format_book_info(book)
+      end
+      
       private
 
       def get_books(query, page=1)
@@ -71,6 +77,14 @@ module Bot
         else
           books
         end
+      end
+
+      def format_book_info(book)
+        msg = "\nHere you go:\n " <<
+          "#{book.image}\n<b>#{book.title}</b> (#{book.year}) by " <<
+          "<i>#{book.author}</i> " <<
+          "\n\n<a href='#{book.download}'>Download here</a>"
+        msg
       end
 
       def get_request(url)
@@ -101,10 +115,21 @@ module Bot
       super
     end
   end
+  class QueryNullError < StandardError
+    def initialize(msg="Sorry, I can only find books " <<
+      "with an actual name")
+      super
+    end
+  end
   class NoBookFoundError < StandardError
     def initialize(msg="I couldn't find any books " <<
       "with the title given")
       super
+    end
+  end
+  class NoQueryError < StandardError
+    def initialize(msg="No query has been provided " <<
+      "for the search")      
     end
   end
   class BadConnectionError < StandardError

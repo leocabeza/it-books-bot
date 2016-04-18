@@ -24,6 +24,10 @@ Telegram::Bot::Client.run(token) do |bot|
       end
 
       begin
+        bot.api.sendChatAction(
+          chat_id: message.message.chat.id,
+          action:'typing'
+        )
         books = Bot::Book.search(query, actual_page)
         question = "Showing page <b>#{actual_page}</b> of #{pages_allowed}\n"
         question << "Which of these books are you trying to download?\n\n"
@@ -39,7 +43,8 @@ Telegram::Bot::Client.run(token) do |bot|
               callback_data: "#{query}//#{books[0].page}//#{books[0].total}"
             )
         ]
-        markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+        markup = Telegram::Bot::Types::InlineKeyboardMarkup
+          .new(inline_keyboard: kb)
         bot.api.edit_message_text(
           chat_id: message.message.chat.id,
           message_id: message.message.message_id,
@@ -47,6 +52,11 @@ Telegram::Bot::Client.run(token) do |bot|
           disable_web_page_preview: true,
           reply_markup: markup,
           parse_mode: 'html'
+        )
+      rescue Bot::QueryNullError => e
+        bot.api.send_message(
+          chat_id: message.from.id,
+          text: e.message
         )
       rescue Bot::QueryTooLongError => e
         bot.api.send_message(
@@ -79,13 +89,17 @@ Telegram::Bot::Client.run(token) do |bot|
         )
       when /^\/[0-9]+$/
         begin
+          bot.api.sendChatAction(
+            chat_id: message.chat.id,
+            action: 'typing'
+          )
           book = Bot::Book.find(message.text)
+          info = Bot::Book.get_book_info(book)
           bot.api.send_message(
             chat_id: message.chat.id,
-            text: "Here you go:\n " <<
-              "#{book.title} (#{book.year}) by " <<
-              "#{book.author} " <<
-              "#{book.download}"
+            text: info,
+            reply_to_message_id: message.message_id,
+            parse_mode:'html'
           )
         rescue Bot::NoBookFoundError => e
           bot.api.send_message(
@@ -119,18 +133,20 @@ Telegram::Bot::Client.run(token) do |bot|
           question = "I found <b>#{books[0].total}</b> results\n"
           question << "Which of these books are you trying to download?\n\n"
           books.each do |book|
-            question << "/#{book.id} - <b>#{book.title}</b>"
-            question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
-            question << "\n"
+            question << "\n&#128214; <b>#{book.title}</b>"
+            question << " - <i>#{book.sub_title}</i>" if book.respond_to?(:sub_title)
+            question << "\n  Get: /#{book.id}"
           end
           kb = [
             Telegram::Bot::Types::InlineKeyboardButton
               .new(
                 text: 'Load more',
-                callback_data: "#{encoded_query}//#{books[0].page}//#{books[0].total}"
+                callback_data: "#{encoded_query}//" <<
+                  "#{books[0].page}//#{books[0].total}"
               )
           ]
-          markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
+          markup = Telegram::Bot::Types::InlineKeyboardMarkup
+            .new(inline_keyboard: kb)
           bot.api.send_message(
             chat_id: message.chat.id,
             text: question,
@@ -143,7 +159,12 @@ Telegram::Bot::Client.run(token) do |bot|
             chat_id: message.chat.id,
             text: e.message
           )
-        rescue Bot::NoBookFoundError => e
+        rescue Bot::QueryNullError => e
+           bot.api.send_message(
+            chat_id: message.chat.id,
+            text: e.message
+          )
+       rescue Bot::NoBookFoundError => e
           bot.api.send_message(
             chat_id: message.chat.id,
             text: e.message
@@ -155,7 +176,9 @@ Telegram::Bot::Client.run(token) do |bot|
           )
         end
       end
-      puts "Response to question #{message.text} sent to @#{message.chat.username}"
+
+      puts "Response to question #{message.text} " <<
+        "sent to @#{message.chat.username}"
     end
   end
 end
