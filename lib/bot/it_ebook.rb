@@ -1,7 +1,5 @@
 require 'httparty'
-require 'open-uri'
 require_relative './version.rb'
-require 'pp'
 
 module Bot
   class Book
@@ -9,61 +7,105 @@ module Bot
 
     base_uri 'http://it-ebooks-api.info/v1/'
 
-    def initialize attrs
+    def initialize attrs, total, page
       attrs.each do |name, val|
-        if name == 'ID'
-          lower_camel_cased = 'id'
-        elsif name == 'ISBN'
-          lower_camel_cased = 'isbn'
-        else
-          lower_camel_cased = name.gsub(/(.)([A-Z])/,'\1_\2').downcase
-        end
+        lower_camel_cased = underscore(name)
         instance_variable_set "@#{lower_camel_cased}", val
 
         define_singleton_method lower_camel_cased.to_sym do
           instance_variable_get "@#{lower_camel_cased}"
         end
       end
+
+      instance_variable_set "@total", total
+      instance_variable_set "@page", page
+      
+      define_singleton_method :total do
+        instance_variable_get "@total"
+      end
+      define_singleton_method :page do
+        instance_variable_get "@page"
+      end
+    end
+
+    private
+
+    def underscore(word)
+      modified_word = word.dup
+      modified_word.gsub!(/::/, '/')
+      modified_word.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+      modified_word.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+      modified_word.tr!("-", "_")
+      modified_word.downcase!
+      modified_word
     end
 
     class << self
       def find(id)
-        response = get("/book/#{id.to_s}")
-        if (response.code == 200)
-          parsed = response.parsed_response
+        book = get_request("/book/#{id.to_s}")
+        book.delete 'Error'
+        book.delete 'Time'
 
-          if (parsed['Error'] == '0')
-            parsed.delete 'Error'
-            parsed.delete 'Time'
-
-            self.new parsed
-          else
-            raise NoBookFoundError
-          end
-        else
-          raise ConnectionErrorError
-        end
+        self.new book, 1, 1
       end
 
-      def search(query)
-        if (query.length > 51)
+      def search(query, page=1)
+        if (query.length > 50)
           raise QueryTooLongError
+        elsif (query.length == 0)
+          raise QueryNullError
         else
-          encoded_query = URI::encode(query)
-          response = get("/search/#{encoded_query}")
-          if (response.code == 200)
-            parsed = response.parsed_response
-            if (parsed['Error'] == '0' &&
-              parsed['Total'] != '0')
-                parsed['Books'].map { |b| self.new b}
-            else
-              raise NoBookFoundError
-            end
-          else
-            raise BadConnectionError
+          books = get_books(query, page)
+          books['Books'].map do |b|
+            self.new b, books['Total'], books['Page']
           end
         end
       end
+      
+      def get_book_info(book)
+        format_book_info(book)
+      end
+      
+      private
+
+      def get_books(query='a', page=1)
+       search_url = "/search/#{query}"
+        search_url << "/page/#{page}" if page != 1
+        books = get_request(search_url)
+        if (books['Total'] == '0')
+          raise NoBookFoundError
+        else
+          books
+        end
+      end
+      
+      def format_book_info(book)
+        msg = "\nHere you go:\n " <<
+              "#{book.image}\n<b>#{book.title}</b> (#{book.year}) by " <<
+              "<i>#{book.author}</i> " <<
+              "\n\n<a href='#{book.download}'>Download here</a>"
+        msg
+      end
+
+      def get_request(url)
+        response = get(url)
+        if(response.code == 200)
+          parsed = response.parsed_response
+          if (parsed['Error'] == '0') # means OK
+            parsed
+          else
+            raise ApiError, parsed['Error']
+          end
+        else
+          raise BadConnectionError
+        end
+      end
+    end
+  end
+
+  class ApiError < StandardError
+    def initialize(msg)
+      super
     end
   end
 
@@ -73,15 +115,20 @@ module Bot
       super
     end
   end
+  class QueryNullError < StandardError
+    def initialize(msg="Sorry, I give a term to search into books")
+      super
+    end
+  end
   class NoBookFoundError < StandardError
     def initialize(msg="I couldn't find any books " <<
-      " with the title given")
+      "with the title given")
       super
     end
   end
   class BadConnectionError < StandardError
     def initialize(msg="There was an error " <<
-      " trying to communicate with It-Ebooks. " <<
+      "trying to communicate with It-Ebooks. " <<
       "Please try again later")
       super
     end

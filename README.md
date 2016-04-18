@@ -1,6 +1,9 @@
 # it-books-bot
 Search and download books from Telegram
 
-Use the command **/search** and pass the title of the book you are looking for.
+Only available through bot handler:
+```
+@itbooksbot ruby
+```
 
-Example: /search eloquent javascript
+# Add me on Telegram: [@itbooksbot](https://telegram.me/itbooksbot)
