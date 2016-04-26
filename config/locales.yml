@@ -1,0 +1,10 @@
+en:
+  greeting_message: "Hello, %{name}, use the /search command"
+  farewell_message: "Bye! I'll miss you :("
+  help_message: "Available commands: /search"
+  what_book: "What's the book name?"
+  do_not_understand: "Sorry, I can't understand that command"
+  showing_page: "Showing page <b>%{actual_page}</b> of %{pages_allowed}\n"
+  which_book: "Which of these books are you trying to download?\n"
+  get_book: "\nGet: /%{book_id}"
+  load_more: "Load more..."

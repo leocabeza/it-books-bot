@@ -1,2 +1,3 @@
-config/secrets.yml
-config/database.yml
+database.yml
+secrets.yml
+*.log
