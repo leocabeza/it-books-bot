@@ -30,11 +30,11 @@ Telegram::Bot::Client.run(token) do |bot|
         )
         books = Bot::Book.search(query, actual_page)
         question = "Showing page <b>#{actual_page}</b> of #{pages_allowed}\n"
-        question << "Which of these books are you trying to download?\n\n"
+        question << "Which of these books are you trying to download?\n"
         books.each do |book|
-          question << "/#{book.id} - <b>#{book.title}</b>"
-          question << " - #{book.sub_title}" if book.respond_to?(:sub_title)
-          question << "\n"
+          question << "\n&#128214; <b>#{book.title}</b>"
+          question << " - <i>#{book.sub_title}</i>" if book.respond_to?(:sub_title)
+          question << "\n  Get: /#{book.id}"
         end
         kb = [
           Telegram::Bot::Types::InlineKeyboardButton
@@ -131,7 +131,7 @@ Telegram::Bot::Client.run(token) do |bot|
         begin
           books = Bot::Book.search(encoded_query)
           question = "I found <b>#{books[0].total}</b> results\n"
-          question << "Which of these books are you trying to download?\n\n"
+          question << "Which of these books are you trying to download?\n"
           books.each do |book|
             question << "\n&#128214; <b>#{book.title}</b>"
             question << " - <i>#{book.sub_title}</i>" if book.respond_to?(:sub_title)
