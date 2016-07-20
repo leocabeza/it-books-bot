@@ -24,7 +24,7 @@ class MessageResponder
       answer_with_book
     when /^\/search/i
       answer_with_question
-    when /^\/[a-zA-Z0-9]+$/
+    when /^\//
       answer_with_unknown_command
     when /^[\w\W\s]+$/
       answer_with_books
