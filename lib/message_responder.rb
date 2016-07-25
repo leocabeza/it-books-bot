@@ -28,6 +28,8 @@ class MessageResponder
       answer_with_unknown_command
     when /^[\w\W\s]+$/
       answer_with_books
+    else
+      say_dont_know
     end
   end
 
@@ -102,6 +104,15 @@ class MessageResponder
     answer_with_message(
       I18n.t(
         'greeting_message',
+        name: message.from.first_name
+      )
+    )
+  end
+
+  def say_dont_know
+    answer_with_message(
+      I18n.t(
+        'dont_know',
         name: message.from.first_name
       )
     )

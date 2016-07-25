@@ -14,6 +14,7 @@ logger = config.get_logger
 logger.debug 'Starting telegram bot'
 
 begin
+  tries ||= 3
   Telegram::Bot::Client.run(token) do |bot|
     bot.listen do |message|
       options = {bot: bot, message: message}
@@ -29,6 +30,10 @@ begin
     end
   end
 rescue Telegram::Bot::Exceptions::ResponseError => e
-  logger.debug e.message
+  if (tries -= 1) > 0
+    retry
+  else
+    logger.debug e.back_trace
+  end
 end
 

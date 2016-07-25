@@ -8,3 +8,4 @@ en:
   which_book: "Which of these books are you trying to download?\n"
   get_book: "\nGet: /%{book_id}"
   load_more: "Load more..."
+  dont_know: "I don't recognize that command :-("

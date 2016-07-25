@@ -1,3 +1,6 @@
 database.yml
 secrets.yml
 *.log
+Gemfile.lock
+debug.lot
+nohup.out
