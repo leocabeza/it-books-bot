@@ -33,7 +33,7 @@ rescue Telegram::Bot::Exceptions::ResponseError => e
   if (tries -= 1) > 0
     retry
   else
-    logger.debug e.back_trace
+    logger.debug e.backtrace
   end
 end
 
