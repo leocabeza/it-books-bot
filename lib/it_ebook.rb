@@ -19,7 +19,7 @@ module Bot
 
       instance_variable_set "@total", total
       instance_variable_set "@page", page
-      
+
       define_singleton_method :total do
         instance_variable_get "@total"
       end
@@ -61,11 +61,11 @@ module Bot
           end
         end
       end
-      
+
       def get_book_info(book)
         format_book_info(book)
       end
-      
+
       private
 
       def get_books(query, page=1)
@@ -90,7 +90,7 @@ module Bot
       def get_request(url)
         response = get(url)
         if(response.code == 200)
-          parsed = response.parsed_response
+          parsed = parse_response(response)
           if (parsed['Error'] == '0') # means OK
             parsed
           else
@@ -98,6 +98,14 @@ module Bot
           end
         else
           raise BadConnectionError
+        end
+      end
+
+      def parse_response(response)
+        begin
+          response.parsed_response
+        rescue JSON::ParserError
+          JSON.parse(response.body.gsub(/(?<=[^:,\{])"(?=[^:,\}])/, '*'))
         end
       end
     end
@@ -129,7 +137,7 @@ module Bot
   end
   class NoQueryError < StandardError
     def initialize(msg="No query has been provided " <<
-      "for the search")      
+      "for the search")
     end
   end
   class BadConnectionError < StandardError
