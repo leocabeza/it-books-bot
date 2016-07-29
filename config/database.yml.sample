@@ -1,0 +1,6 @@
+adapter: postgresql
+database: itbooksbot
+encoding: utf8
+pool: 5
+timeout: 5000
+host: localhost
